@@ -21,7 +21,7 @@ export default function LoginForm() {
         } else {
             localStorage.setItem('token', loginData.data.accessToken);
             localStorage.setItem('name', loginData.data.name);
-            await router.push('/home');
+            router.push('/home');
         }
     }
 

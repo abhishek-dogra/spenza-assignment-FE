@@ -1,10 +1,11 @@
 "use client";
 import {FormEvent, useState} from "react";
 import Link from "next/link";
-import {router} from "next/client";
 import {Signup} from "@/common/userAxiosWrapper";
+import {useRouter} from "next/navigation";
 
 export default function RegisterForm() {
+    const router = useRouter();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -14,19 +15,18 @@ export default function RegisterForm() {
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const signUpData = await Signup(name, email, password);
-        setMessage(signUpData.message);
-        if (signUpData.error || signUpData.data == null) {
+        if (signUpData.error) {
+            setMessage(signUpData.message);
             setError(true);
-            return;
         } else {
-            await router.push('/login');
+            router.push('/login');
         }
     }
 
 
     return <div className="grid place-items-center h-screen">
         <div className="shadow-lg p-5 rounded-lg border-t-4 border-green-400">
-            <h1 className="text-xl font-bold my-4">Login</h1>
+            <h1 className="text-xl font-bold my-4">Register</h1>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                 <input

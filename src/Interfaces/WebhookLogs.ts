@@ -6,5 +6,6 @@ export interface WebhookLogs {
     timestamp: string
     sourceUrl: string
     id: string
+    retries:number
     webhookUser: UserWebhookMapping
 }

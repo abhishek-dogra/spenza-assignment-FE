@@ -52,14 +52,13 @@ export async function Signup(name: string, email: string, password: string) {
             email: email,
             password: password,
         });
-        if (response.status !== 200) {
-            return {error: true, message: response.data.message, data: null};
+        if (response.status !== 201) {
+            return {error: true, message: response.data.message};
         }
-        const data: { name: string; email: string } = response.data;
-        return {error: false, message: 'success', data: data};
+        return {error: false, message: 'success'};
     } catch (error) {
         console.log('Something went wrong.');
-        return {error: true, message: 'failure', data: null};
+        return {error: true, message: 'failure'};
     }
 }
 
@@ -101,7 +100,7 @@ export async function FetchWebhookList(): Promise<{ error: boolean; message: str
     }
 }
 
-export async function SubscribeWebhook(id: string, sourceUrls: string[]): Promise<{ error: boolean; message: string; status: number }> {
+export async function SubscribeWebhook(id: string, sourceUrl: string,retryCount:number): Promise<{ error: boolean; message: string; status: number }> {
     try {
         const headers: any = {'content-type': 'application/json'};
         const token = localStorage.getItem('token');
@@ -110,9 +109,10 @@ export async function SubscribeWebhook(id: string, sourceUrls: string[]): Promis
         }
         const response = await UserAxiosWrapper('http://localhost:3001/webhook/subscribe', 'POST', headers, {
             webhookId: id,
-            sourceUrls: sourceUrls
+            sourceUrl: sourceUrl,
+            retryCount: retryCount
         });
-        if (response.status !== 200) {
+        if (response.status !== 201) {
             return {error: true, message: response.data.message, status: response.status};
         }
         return {error: false, message: 'success', status: response.status};
@@ -122,23 +122,20 @@ export async function SubscribeWebhook(id: string, sourceUrls: string[]): Promis
     }
 }
 
-export async function UpdateWebhookMapping(webhookUserId: string, sourceUrls: string[], cancel:boolean|null): Promise<{ error: boolean; message: string; status: number }> {
+export async function UpdateWebhookMapping(webhookUserId: string, retryCount: number | null, cancel: boolean | null): Promise<{ error: boolean; message: string; status: number }> {
     try {
         const headers: any = {'content-type': 'application/json'};
         const token = localStorage.getItem('token');
         if (token != null) {
             headers.authorization = token;
         }
-        console.log(webhookUserId);
-        console.log(sourceUrls);
-        console.log(cancel);
-        const response = await UserAxiosWrapper('http://localhost:3001/webhook/update', 'POST', headers, {
+        const response = await UserAxiosWrapper('http://localhost:3001/webhook/subscription', 'PUT', headers, {
             webhookUserId: webhookUserId,
-            sourceUrls: sourceUrls,
+            retryCount:retryCount,
             cancel:cancel
         });
         console.log(response);
-        if (response.status !== 200) {
+        if (response.status !== 201) {
             return {error: true, message: response.data.message, status: response.status};
         }
         return {error: false, message: 'success', status: response.status};
@@ -160,6 +157,25 @@ export async function FetchWebhookLogsList(): Promise<{ error: boolean; message:
             return {error: true, message: response.data.message, data: null, status: response.status};
         }
         const data: { data: WebhookLogs[] } = response.data;
+        return {error: false, message: 'success', data: data, status: response.status};
+    } catch (error) {
+        console.log('Something went wrong.');
+        return {error: true, message: 'failure', data: null, status: 500};
+    }
+}
+
+export async function GetAuthKey(): Promise<{ error: boolean; message: string; data: { authKey:string  } | null, status: number }> {
+    try {
+        const headers: any = {'content-type': 'application/json'};
+        const token = localStorage.getItem('token');
+        if (token != null) {
+            headers.authorization = token;
+        }
+        const response = await UserAxiosWrapper('http://localhost:3001/user/auth-key', 'GET', headers, null);
+        if (response.status !== 200) {
+            return {error: true, message: response.data.message, data: null, status: response.status};
+        }
+        const data: { authKey:string } = response.data;
         return {error: false, message: 'success', data: data, status: response.status};
     } catch (error) {
         console.log('Something went wrong.');

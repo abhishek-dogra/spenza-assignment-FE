@@ -80,6 +80,11 @@ export default function WebhookLogList() {
                         <p>Webhook Name: {selectedLog.webhookUser.webhook.name}</p>
                         <p>Timestamp: {selectedLog.timestamp}</p>
                         <p>Source URL: {selectedLog.sourceUrl}</p>
+                        <p>Retry Count: {selectedLog.retries}</p>
+                        <div className="mt-4 p-4 border rounded-md max-h-40 overflow-y-auto">
+                            <h3 className="text-lg font-semibold mb-2">Data</h3>
+                            <pre>{JSON.stringify(selectedLog.data, null, 2)}</pre>
+                        </div>
                         <button
                             onClick={handleCloseModal}
                             className="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 focus:outline-none focus:shadow-outline-red active:bg-red-800"

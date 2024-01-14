@@ -6,18 +6,23 @@ import SubscribedList from "@/components/SubscribedList";
 
 export default function Page() {
 
+    const [webhookListKey, setWebhookListKey] = useState(0);
+
+    const handleFormSubmit = () => {
+        setWebhookListKey((prevKey) => prevKey + 1);
+    };
+
     return (
         <div className="flex">
-            <SubscribedList/>
+            <div className="w-2/3">
+                <SubscribedList key={webhookListKey}/>
+            </div>
             <div className="w-1/3">
                 <div className="p-4">
-                    <SubscribeFormButton />
+                    <SubscribeFormButton onFormSubmit={handleFormSubmit}/>
                 </div>
             </div>
         </div>
     );
-
-
-
 }
 

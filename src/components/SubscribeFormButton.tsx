@@ -1,17 +1,21 @@
 "use client";
 import React, {useState, useEffect, ChangeEvent, FormEvent} from 'react';
-import {FetchWebhookList, Login, SubscribeWebhook} from "@/common/userAxiosWrapper";
-import {router} from "next/client";
+import {FetchWebhookList, SubscribeWebhook} from "@/common/userAxiosWrapper";
 import {Webhook} from "@/Interfaces/Webhook.interface";
-export default function SubscribeFormButton() {
-    const [showForm, setShowForm] = useState(false);
+import {useRouter} from "next/navigation";
+
+interface SubscribeFormButtonProps {
+    onFormSubmit: () => void;
+}
+
+export default function SubscribeFormButton({ onFormSubmit }: SubscribeFormButtonProps) {
+    const router = useRouter();
     const [dropdownOptions, setDropdownOptions] = useState<Webhook[]>([]);
     const [selectedOption, setSelectedOption] = useState('');
-    const [sourceUrls, setSourceUrls] = useState<string[]>([]);
-    const [newSourceUrl, setNewSourceUrl] = useState('');
-
+    const [sourceUrl, setSourceUrl] = useState('');
+    const [retryCount, setRetryCount] = useState<number>(1);
     const [error, setError] = useState(false);
-    const [message, setMessage] = useState<string|null>(null);
+    const [message, setMessage] = useState<string | null>(null);
 
     async function fetchWebhookList() {
         const response = await FetchWebhookList();
@@ -30,117 +34,86 @@ export default function SubscribeFormButton() {
         fetchWebhookList();
     }, []);
 
-    const handleAddMoreClick = () => {
-        setShowForm(!showForm);
-    };
-
     const handleDropdownChange = (event:ChangeEvent<HTMLSelectElement>) => {
         setSelectedOption(event.target.value);
     };
 
     const handleFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!selectedOption) {
+        if (!selectedOption || selectedOption=='') {
             alert('Please select an option from the dropdown.');
             return;
         }
-        if (sourceUrls.length === 0) {
-            alert('Please provide at least one source URL.');
-            return;
-        }
-        console.log(selectedOption,sourceUrls);
-        const response = await SubscribeWebhook(selectedOption, sourceUrls);
+        const response = await SubscribeWebhook(selectedOption, sourceUrl, retryCount);
         if(response.status==401){
             localStorage.clear();
             router.push('/login');
         }
         setMessage(response.message);
-        handleCloseForm();
+        onFormSubmit();
         if (response.error) {
             setError(true);
             return;
         }
+        setError(false);
+        clearForm();
     };
 
-    const handleAddSourceUrl = () => {
-        if (newSourceUrl) {
-            setSourceUrls(prevUrls => [...prevUrls, newSourceUrl]);
-            setNewSourceUrl('');
-        }
-    };
-
-    const handleRemoveSourceUrl = (index:number) => {
-        setSourceUrls(prevUrls => prevUrls.filter((_, i) => i !== index));
-    };
-
-    const handleCloseForm = () => {
-        setShowForm(false);
-        setSourceUrls([]);
-        setNewSourceUrl('');
+    const clearForm = () => {
+        setSelectedOption('');
+        setRetryCount(1);
     };
 
     return (
         <div>
+            <form onSubmit={handleFormSubmit}>
+                <label className="block">
+                    Select an option:
+                    <select
+                        value={selectedOption}
+                        onChange={handleDropdownChange}
+                        className="mt-1 p-2 border rounded"
+                    >
+                        <option value="">Select an option</option>
+                        {dropdownOptions.map((option) => (
+                            <option key={option.id} value={option.id}>
+                                {option.name}
+                            </option>
+                        ))}
+                    </select>
+                </label>
 
-            <button className="bg-blue-500 text-white py-2 px-4 rounded" onClick={handleAddMoreClick}>
-                Add More
-            </button>
-
-            {showForm && (
-                <form onSubmit={handleFormSubmit}>
-                    <label>
-                        Select an option:
-                        <select value={selectedOption} onChange={handleDropdownChange}>
-                            <option value="">Select an option</option>
-                            {dropdownOptions.map(option => (
-                                <option key={option.id} value={option.id}>
-                                    {option.name}
-                                </option>
-                            ))}
-                        </select>
+                <div className="mt-4">
+                    <label className="block">
+                        Source URL:
+                        <input
+                            type="text"
+                            className="mt-1 p-2 border rounded"
+                            value={sourceUrl}
+                            onChange={(e) => setSourceUrl(e.target.value)}
+                        />
                     </label>
+                    <label className="mt-4 block">
+                        Retry Count:
+                        <input
+                            type="number"
+                            className="mt-1 p-2 border rounded"
+                            value={retryCount}
+                            onChange={(e) => setRetryCount(parseInt(e.target.value))}
+                        />
+                    </label>
+                </div>
 
-                    <div className="mt-4">
-                        <label className="block">
-                            Add Source URL:
-                            <div className="flex items-center">
-                                <input
-                                    type="text"
-                                    className="mt-1 p-2 border rounded"
-                                    value={newSourceUrl}
-                                    onChange={e => setNewSourceUrl(e.target.value)}
-                                />
-                                <button
-                                    type="button"
-                                    className="ml-2 bg-green-500 text-white py-2 px-4 rounded"
-                                    onClick={handleAddSourceUrl}
-                                >
-                                    +
-                                </button>
-                            </div>
-                        </label>
-                        <ul className="mt-2">
-                            {sourceUrls.map((url, index) => (
-                                <li key={index} className="flex items-center">
-                                    {url}
-                                    <button
-                                        type="button"
-                                        className="ml-2 text-red-500"
-                                        onClick={() => handleRemoveSourceUrl(index)}
-                                    >
-                                        Remove
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
+                <button type="submit" className="mt-4 bg-green-500 text-white py-2 px-4 rounded">
+                    Submit
+                </button>
+
+                {(error || message) && (
+                    <div className={`mt-2 text-white w-fit text-sm py-1 px-3 rounded-md ${error ? 'bg-red-500' : 'bg-green-500'}`}>
+                        {message}
                     </div>
-
-                    <button type="submit">Submit</button>
-                    <button className="mt-2 ml-2 bg-red-500 text-white py-2 px-4 rounded" onClick={handleCloseForm}>
-                        Close
-                    </button>
-                </form>
-            )}
+                )}
+            </form>
         </div>
     );
 };
